@@ -1,10 +1,8 @@
-# Импорт необходимых библиотек
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Настройка визуализаций
 plt.style.use('seaborn-v0_8')
 sns.set_theme(style="whitegrid")
 
@@ -12,7 +10,7 @@ sns.set_theme(style="whitegrid")
 try:
     df = pd.read_excel('wb_pc_easy.xlsx', engine='openpyxl')
     print("Данные успешно загружены. Первые 5 строк:")
-    print(df.head().to_string())  # Заменяем display() на print()
+    print(df.head().to_string())
 except Exception as e:
     print(f"Ошибка при загрузке файла: {e}")
     exit()
@@ -38,7 +36,7 @@ df[cat_cols] = df[cat_cols].fillna('Не указано')
 
 # 4. Статистический анализ
 print("\n4. Основные статистические показатели:")
-print(df[numeric_cols].describe().to_string())  # Заменяем display() на print()
+print(df[numeric_cols].describe().to_string())
 
 # Анализ категориальных данных
 print("\nРаспределение по категориям:")
