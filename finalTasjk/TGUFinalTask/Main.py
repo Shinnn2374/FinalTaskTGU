@@ -1,112 +1,128 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-plt.style.use('seaborn-v0_8')
-sns.set_theme(style="whitegrid")
+# Установка стиля Seaborn
+sns.set(style="whitegrid")
 
-# 1. Загрузка данных
-try:
-    df = pd.read_excel('wb_pc_easy.xlsx', engine='openpyxl')
-    print("Данные успешно загружены. Первые 5 строк:")
-    print(df.head().to_string())
-except Exception as e:
-    print(f"Ошибка при загрузке файла: {e}")
-    exit()
+# Загрузка данных
+df = pd.read_excel('hh_easy.xlsx')
 
-# 2. Предварительный анализ данных
-print("\n2. Основная информация о датасете:")
+# Предварительный просмотр данных
+print(df.head())
 print(df.info())
 
-print("\n3. Пропущенные значения:")
-print(df.isna().sum())
+# 1. Анализ профессиональных ролей
+professional_roles = df['professional_roles'].value_counts().head(10)
 
-# 3. Очистка и преобразование данных
-# Заполнение пропусков для числовых столбцов
-numeric_cols = ['Цена, руб.', 'Количество ядер процессора',
-               'Объем оперативной памяти (Гб)']
-df[numeric_cols] = df[numeric_cols].fillna(0)
+# 2. Анализ требований к опыту работы
+experience_dist = df['experience'].value_counts(normalize=True) * 100
 
-# Преобразование категориальных данных
-cat_cols = ['Видеопроцессор', 'Операционная система',
-           'Процессор_тип', 'Тип оперативной памяти',
-           'Объем накопителя HDD', 'Объем накопителя SSD']
-df[cat_cols] = df[cat_cols].fillna('Не указано')
+# 3. Анализ графиков работы
+schedule_dist = df['schedule'].value_counts(normalize=True) * 100
 
-# 4. Статистический анализ
-print("\n4. Основные статистические показатели:")
-print(df[numeric_cols].describe().to_string())
+# 4. Анализ типов занятости
+employment_dist = df['employment'].value_counts(normalize=True) * 100
 
-# Анализ категориальных данных
-print("\nРаспределение по категориям:")
-for col in cat_cols:
-    print(f"\n{col}:")
-    print(df[col].value_counts(normalize=True).head(10).to_string())
+# 5. Анализ ключевых навыков
+all_skills = df['key_skills'].str.split(', ').explode()
+top_skills = all_skills.value_counts().head(20)
 
-# 5. Визуализация данных
-plt.figure(figsize=(15, 10))
+# 6. Анализ зарплатных предложений
+df['salary_mid'] = (df['salary_from'] + df['salary_to']) / 2
 
-# Распределение цен
+# Визуализация результатов
+plt.figure(figsize=(15, 12))
+
+# График распределения профессиональных ролей
 plt.subplot(2, 2, 1)
-sns.histplot(df['Цена, руб.'], bins=30, kde=True)
-plt.title('Распределение цен на ноутбуки')
-plt.xlabel('Цена, руб.')
-plt.ylabel('Количество')
+sns.barplot(y=professional_roles.index, x=professional_roles.values,
+            hue=professional_roles.index, palette='viridis', orient='h', legend=False)
+plt.title('Распределение профессиональных ролей', pad=20, fontsize=14)
+plt.xlabel('Количество вакансий', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
+plt.xlim(0, professional_roles.max() * 1.1)
 
-# Ядра процессора vs Цена
+# График распределения опыта работы
 plt.subplot(2, 2, 2)
-sns.boxplot(x='Количество ядер процессора', y='Цена, руб.', data=df)
-plt.title('Зависимость цены от количества ядер')
+sns.barplot(y=experience_dist.index, x=experience_dist.values,
+            hue=experience_dist.index, palette='viridis', orient='h', legend=False)
+plt.title('Требования к опыту работы', pad=20, fontsize=14)
+plt.xlabel('Доля вакансий, %', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
+plt.xlim(0, 100)
 
-# Объем ОЗУ vs Цена
+# График распределения графиков работы
 plt.subplot(2, 2, 3)
-sns.scatterplot(x='Объем оперативной памяти (Гб)', y='Цена, руб.', data=df)
-plt.title('Зависимость цены от объема ОЗУ')
+sns.barplot(y=schedule_dist.index, x=schedule_dist.values,
+            hue=schedule_dist.index, palette='viridis', orient='h', legend=False)
+plt.title('Графики работы', pad=20, fontsize=14)
+plt.xlabel('Доля вакансий, %', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
+plt.xlim(0, 100)
 
-# Тип процессора vs Цена
+# График топ-10 ключевых навыков
 plt.subplot(2, 2, 4)
-sns.boxplot(x='Процессор_тип', y='Цена, руб.', data=df)
-plt.xticks(rotation=45)
-plt.title('Зависимость цены от типа процессора')
+sns.barplot(y=top_skills.head(10).index, x=top_skills.head(10).values,
+            hue=top_skills.head(10).index, palette='viridis', orient='h', legend=False)
+plt.title('Топ-10 ключевых навыков', pad=20, fontsize=14)
+plt.xlabel('Количество упоминаний', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
+plt.xlim(0, top_skills.max() * 1.1)
 
 plt.tight_layout()
-plt.savefig('analysis_plots.png')  # Сохраняем графики в файл
-print("\nГрафики сохранены в файл 'analysis_plots.png'")
+plt.show()
 
-# 6. Корреляционный анализ
-print("\n6. Матрица корреляций:")
-corr_matrix = df[numeric_cols].corr()
-print(corr_matrix.to_string())
+# Дополнительные графики
+plt.figure(figsize=(15, 5))
 
-plt.figure(figsize=(8, 6))
-sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', center=0)
-plt.title('Матрица корреляций числовых параметров')
-plt.savefig('correlation_matrix.png')
-print("Матрица корреляций сохранена в файл 'correlation_matrix.png'")
+# График распределения зарплат
+plt.subplot(1, 2, 1)
+sns.histplot(df['salary_mid'], bins=20, kde=True, color='skyblue')
+plt.title('Распределение зарплат', pad=20, fontsize=14)
+plt.xlabel('Зарплата, руб.', fontsize=12)
+plt.ylabel('Количество вакансий', fontsize=12)
+plt.grid(axis='y')
 
-# 7. Анализ взаимосвязей
-print("\n7. Топ-5 самых дорогих ноутбуков:")
-print(df.nlargest(5, 'Цена, руб.')[['Наименование', 'Цена, руб.',
-                                   'Процессор_тип',
-                                   'Объем оперативной памяти (Гб)']].to_string())
+# График зависимости зарплаты от опыта работы
+plt.subplot(1, 2, 2)
+sns.boxplot(y='experience', x='salary_mid', data=df,
+            hue='experience', palette='pastel', orient='h', legend=False)
+plt.title('Зависимость зарплаты от опыта работы', pad=20, fontsize=14)
+plt.xlabel('Зарплата, руб.', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
 
-# 8. Выводы и рекомендации
-print("""
-8. Основные выводы и рекомендации:
+plt.tight_layout()
+plt.show()
 
-1. Распределение цен показывает, что большинство ноутбуков находятся в среднем ценовом диапазоне.
-2. Наблюдается четкая зависимость цены от технических характеристик:
-   - Чем больше ядер процессора и объем ОЗУ, тем выше цена
-   - SSD накопители сильнее влияют на цену, чем HDD
-3. Наиболее распространенные процессоры: Intel Core i5, i7
-4. Windows - доминирующая ОС на рынке
-5. Выявлены сильные корреляции между:
-   - Объемом ОЗУ и ценой
-   - Количеством ядер и ценой
+# Анализ вакансий с частичной занятостью и гибким графиком
+part_time_flex = df[(df['employment'] == 'частичная занятость') | (df['schedule'] == 'гибкий график')]
+part_time_roles = part_time_flex['professional_roles'].value_counts().head(10)
+part_time_skills = part_time_flex['key_skills'].str.split(', ').explode().value_counts().head(10)
 
-Рекомендации:
-- Для массового рынка стоит рассматривать модели с Intel Core i5, 8-16 ГБ ОЗУ
-- Премиальные модели должны иметь SSD накопители и мощные видеопроцессоры
-- Анализ топовых продавцов поможет в выборе партнеров
-""")
+# График для вакансий с частичной занятостью/гибким графиком
+plt.figure(figsize=(15, 5))
+
+plt.subplot(1, 2, 1)
+sns.barplot(y=part_time_roles.index, x=part_time_roles.values,
+            hue=part_time_roles.index, palette='viridis', orient='h', legend=False)
+plt.title('Топ профессий с гибкими условиями', pad=20, fontsize=14)
+plt.xlabel('Количество вакансий', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
+
+plt.subplot(1, 2, 2)
+sns.barplot(y=part_time_skills.index, x=part_time_skills.values,
+            hue=part_time_skills.index, palette='viridis', orient='h', legend=False)
+plt.title('Топ навыков для гибких вакансий', pad=20, fontsize=14)
+plt.xlabel('Количество упоминаний', fontsize=12)
+plt.ylabel('')
+plt.grid(axis='x')
+
+plt.tight_layout()
+plt.show()
